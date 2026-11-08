@@ -67,6 +67,8 @@ nav button{flex:1;background:none;color:var(--muted);padding:8px 4px;font-size:1
 nav button svg{width:22px;height:22px}
 nav button.active{color:var(--accent)}
 .pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--soft);color:var(--ink)}
+label.check{display:flex;gap:10px;align-items:flex-start;font-weight:600;margin-top:14px}
+label.check input{width:20px;height:20px;margin-top:2px;flex-shrink:0;accent-color:var(--accent)}
 details summary{cursor:pointer;color:var(--muted);font-size:14px}
 .empty{color:var(--muted);text-align:center;padding:20px 0;font-size:14px}
 </style>
@@ -147,6 +149,18 @@ details summary{cursor:pointer;color:var(--muted);font-size:14px}
     <label for="sDesc">Style description</label>
     <textarea id="sDesc" placeholder="Tap 'Describe it for me' once you've added samples, or write your own: line work, colours, shading, texture, mood…"></textarea>
     <p class="hint">This description is reused every time, which keeps results consistent. Edit it freely.</p>
+    <label class="check"><input type="checkbox" id="sKeep"> <span>Keep the same characters too<br><span class="hint">For a book series: reuses the faces, hair and outfits from the samples instead of just the art style.</span></span></label>
+    <label for="sRatio">Default shape</label>
+    <select id="sRatio">
+      <option value="auto">Match photo</option>
+      <option value="1:1">Square</option>
+      <option value="3:4">Portrait 3:4</option>
+      <option value="2:3">Portrait 2:3 (book page)</option>
+      <option value="9:16">Tall 9:16</option>
+      <option value="4:3">Landscape 4:3</option>
+      <option value="3:2">Landscape 3:2</option>
+      <option value="16:9">Wide 16:9</option>
+    </select>
     <div class="row" style="margin-top:12px">
       <button class="btn2" id="sAnalyse">Describe it for me</button>
     </div>
@@ -367,7 +381,8 @@ $('sSave').onclick = async () => {
   const name = $('sName').value.trim();
   if(!name) return setStatus($('sStatus'), 'Give the style a name.', 'err');
   if(!draft.samples.length && !$('sDesc').value.trim()) return setStatus($('sStatus'), 'Add samples or a description.', 'err');
-  const style = {id: draft.id || uid(), name, description: $('sDesc').value.trim(), samples: draft.samples, created: Date.now()};
+  const style = {id: draft.id || uid(), name, description: $('sDesc').value.trim(), samples: draft.samples,
+    keepCharacters: $('sKeep').checked, ratio: $('sRatio').value, created: draft.created || Date.now()};
   try{
     await dbPut('styles', style);
     store.set('lastStyle', style.id);
@@ -377,7 +392,7 @@ $('sSave').onclick = async () => {
   }catch(err){ setStatus($('sStatus'), 'Could not save: ' + err.message, 'err'); }
 };
 function resetStyleForm(){
-  draft = {id:null, samples:[]}; $('sName').value = ''; $('sDesc').value = '';
+  draft = {id:null, samples:[]}; $('sName').value = ''; $('sDesc').value = ''; $('sKeep').checked = false; $('sRatio').value = 'auto';
   $('sFormTitle').textContent = 'New style'; $('sCancelRow').hidden = true; renderDraftThumbs();
 }
 $('sCancel').onclick = () => { resetStyleForm(); setStatus($('sStatus'), ''); };
@@ -393,11 +408,12 @@ async function refreshStyles(){
     s.samples.slice(0,3).forEach(u => { const i = document.createElement('img'); i.src = u; pics.appendChild(i); });
     const meta = document.createElement('div'); meta.className = 'meta';
     const b = document.createElement('b'); b.textContent = s.name;
-    const sp = document.createElement('span'); sp.textContent = s.samples.length + ' sample' + (s.samples.length === 1 ? '' : 's') + (s.description ? ' · described' : ' · no description');
+    const sp = document.createElement('span'); sp.textContent = s.samples.length + ' sample' + (s.samples.length === 1 ? '' : 's') + (s.description ? ' · described' : ' · no description') + (s.keepCharacters ? ' · keeps characters' : '');
     meta.append(b, sp);
     const edit = document.createElement('button'); edit.className = 'btn2 btn-sm'; edit.textContent = 'Edit';
     edit.onclick = () => {
-      draft = {id: s.id, samples: [...s.samples]}; $('sName').value = s.name; $('sDesc').value = s.description || '';
+      draft = {id: s.id, samples: [...s.samples], created: s.created}; $('sName').value = s.name; $('sDesc').value = s.description || '';
+      $('sKeep').checked = !!s.keepCharacters; $('sRatio').value = s.ratio || 'auto';
       $('sFormTitle').textContent = 'Edit style'; $('sCancelRow').hidden = false; renderDraftThumbs(); setStatus($('sStatus'), ''); window.scrollTo(0,0);
     };
     const del = document.createElement('button'); del.className = 'btn2 btn-sm'; del.textContent = 'Delete';
@@ -410,14 +426,15 @@ async function refreshStyles(){
   if(!styles.length){ sel.innerHTML = '<option value="">No styles yet — add one in Styles</option>'; }
   styles.forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = s.name; sel.appendChild(o); });
   if(styles.some(s => s.id === keep)) sel.value = keep;
-  updateStyleHint();
+  updateStyleHint(true);
 }
 function currentStyle(){ return styles.find(s => s.id === $('cStyle').value); }
-function updateStyleHint(){
+function updateStyleHint(applyRatio){
   const s = currentStyle();
-  $('cStyleHint').textContent = s ? (s.samples.length + ' sample' + (s.samples.length===1?'':'s') + ' will be sent as reference.') : '';
+  $('cStyleHint').textContent = s ? (s.samples.length + ' sample' + (s.samples.length===1?'':'s') + ' will be sent as reference' + (s.keepCharacters ? ', keeping the same characters.' : '.')) : '';
+  if(s && applyRatio) $('cRatio').value = s.ratio || 'auto';
 }
-$('cStyle').onchange = () => { store.set('lastStyle', $('cStyle').value); updateStyleHint(); };
+$('cStyle').onchange = () => { store.set('lastStyle', $('cStyle').value); updateStyleHint(true); };
 
 /* ---------- CREATE ---------- */
 let content = null;      // {url,w,h}
@@ -440,7 +457,9 @@ function buildParts(style, opts, current, fix){
   const parts = [];
   const n = style.samples.length;
   parts.push({text: `You are an expert illustrator who can reproduce any artistic style exactly.\n\n` +
-    (n ? `The next ${n} image${n>1?'s are':' is'} STYLE REFERENCES only. Use them for style alone — do not copy their subjects, characters, objects or layout.` : '') +
+    (n ? (style.keepCharacters
+      ? `The next ${n} image${n>1?'s are':' is'} REFERENCE PAGES from the same picture-book series. Match their art style exactly, and keep every recurring character looking exactly as they do in these pages: same faces, skin tone, hair, eye colour, proportions and usual outfits. Do not copy their exact compositions.`
+      : `The next ${n} image${n>1?'s are':' is'} STYLE REFERENCES only. Use them for style alone — do not copy their subjects, characters, objects or layout.`) : '') +
     (style.description ? `\n\nSTYLE DESCRIPTION:\n${style.description}` : '')});
   style.samples.forEach((u, i) => { parts.push({text: `Style reference ${i+1}:`}); parts.push(toPart(u)); });
   if(opts.content){ parts.push({text: 'CONTENT IMAGE (the picture to recreate):'}); parts.push(toPart(opts.content)); }
@@ -576,7 +595,7 @@ $('bFile').onchange = async e => {
   try{
     const d = JSON.parse(await f.text());
     if(!d.styles || !Array.isArray(d.styles)) throw new Error('Not a Style Studio export');
-    for(const s of d.styles){ if(s && s.id && s.name) await dbPut('styles', {id:s.id, name:String(s.name), description:String(s.description||''), samples:(s.samples||[]).filter(u => typeof u === 'string' && u.startsWith('data:image/')), created:s.created||Date.now()}); }
+    for(const s of d.styles){ if(s && s.id && s.name) await dbPut('styles', {id:s.id, name:String(s.name), description:String(s.description||''), samples:(s.samples||[]).filter(u => typeof u === 'string' && u.startsWith('data:image/')), keepCharacters:!!s.keepCharacters, ratio:typeof s.ratio === 'string' ? s.ratio : 'auto', created:s.created||Date.now()}); }
     await refreshStyles(); setStatus($('bStatus'), 'Imported ' + d.styles.length + ' style(s).', 'ok');
   }catch(err){ setStatus($('bStatus'), 'Import failed: ' + err.message, 'err'); }
 };
