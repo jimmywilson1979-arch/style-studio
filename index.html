@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Style Studio</title>
+<meta name="theme-color" content="#14121a">
+<style>
+:root{
+  --bg:#f6f4f0; --card:#ffffff; --ink:#1d1b22; --muted:#6c6875; --line:#e3dfd8;
+  --accent:#d9480f; --accent-ink:#fff; --soft:#fbe9df; --ok:#2b8a3e; --err:#c92a2a;
+  --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#14121a; --card:#1e1b26; --ink:#f1eef6; --muted:#a29dad; --line:#2f2b3a;
+    --accent:#ff7a3d; --accent-ink:#1a0f08; --soft:#2c1f1a; --ok:#69db7c; --err:#ff8787; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{padding-bottom:84px}
+header{padding:18px 16px 8px}
+header h1{margin:0;font-size:22px;letter-spacing:-.01em}
+header p{margin:2px 0 0;color:var(--muted);font-size:14px}
+main{padding:0 16px;max-width:720px;margin:0 auto}
+section.view{display:none}
+section.view.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin:12px 0}
+.card h2{margin:0 0 10px;font-size:17px}
+label{display:block;font-size:14px;font-weight:600;margin:12px 0 6px}
+.hint{color:var(--muted);font-size:13px;margin:4px 0 0}
+input[type=text],input[type=password],select,textarea{
+  width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
+textarea{min-height:110px;resize:vertical}
+button{font:inherit;border:0;border-radius:10px;padding:12px 16px;cursor:pointer;font-weight:600}
+.btn{background:var(--accent);color:var(--accent-ink);width:100%}
+.btn2{background:var(--soft);color:var(--ink)}
+.btn-sm{padding:8px 12px;font-size:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row>*{flex:1 1 0}
+button:disabled{opacity:.5;cursor:default}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin-top:8px}
+.thumb{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--bg)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .x{position:absolute;top:4px;right:4px;width:26px;height:26px;padding:0;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:15px;line-height:26px}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:18px;text-align:center;color:var(--muted);font-size:14px;cursor:pointer}
+.drop img{max-width:100%;max-height:260px;border-radius:8px;display:block;margin:0 auto}
+.style-item{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.style-item:first-child{border-top:0}
+.style-item .pics{display:flex;flex-shrink:0}
+.style-item .pics img{width:44px;height:44px;object-fit:cover;border-radius:8px;border:2px solid var(--card);margin-left:-14px}
+.style-item .pics img:first-child{margin-left:0}
+.style-item .meta{flex:1;min-width:0}
+.style-item .meta b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.style-item .meta span{color:var(--muted);font-size:13px}
+.result img{width:100%;border-radius:12px;display:block}
+.status{font-size:14px;margin-top:10px;min-height:1em}
+.status.err{color:var(--err)} .status.ok{color:var(--ok)}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .8s linear infinite;vertical-align:-3px;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.gallery figure{margin:0;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.gallery img{width:100%;display:block;aspect-ratio:1;object-fit:cover}
+.gallery figcaption{padding:8px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:6px;align-items:center}
+.gallery figcaption button{padding:4px 8px;font-size:12px}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+nav button{flex:1;background:none;color:var(--muted);padding:8px 4px;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button svg{width:22px;height:22px}
+nav button.active{color:var(--accent)}
+.pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--soft);color:var(--ink)}
+details summary{cursor:pointer;color:var(--muted);font-size:14px}
+.empty{color:var(--muted);text-align:center;padding:20px 0;font-size:14px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Style Studio</h1>
+  <p>Save an art style once, then turn any picture into that style.</p>
+</header>
+
+<main>
+<!-- CREATE -->
+<section class="view active" id="v-create">
+  <div class="card" id="noKeyCard" hidden>
+    <h2>First, add your Gemini key</h2>
+    <p class="hint">Get a free key at aistudio.google.com, then paste it in Settings. It stays on this device only.</p>
+    <button class="btn" style="margin-top:12px" onclick="go('settings')">Open Settings</button>
+  </div>
+
+  <div class="card">
+    <h2>1. Pick a style</h2>
+    <select id="cStyle"></select>
+    <p class="hint" id="cStyleHint"></p>
+  </div>
+
+  <div class="card">
+    <h2>2. Your picture</h2>
+    <div class="drop" id="cDrop">Tap to choose a photo<br><span class="hint">or leave empty and just describe a scene below</span></div>
+    <input type="file" id="cFile" accept="image/*" hidden>
+    <div class="row" style="margin-top:8px" id="cClearRow" hidden><button class="btn2 btn-sm" id="cClear">Remove photo</button></div>
+    <label for="cNotes">Extra instructions <span class="hint">(optional)</span></label>
+    <textarea id="cNotes" placeholder="e.g. Make it a snowy evening. Keep the dog's red collar. — or, with no photo: a little boy in a barber's chair, smiling"></textarea>
+    <div class="row">
+      <div><label for="cRatio">Shape</label>
+        <select id="cRatio">
+          <option value="auto">Match photo</option>
+          <option value="1:1">Square</option>
+          <option value="3:4">Portrait 3:4</option>
+          <option value="2:3">Portrait 2:3</option>
+          <option value="9:16">Tall 9:16</option>
+          <option value="4:3">Landscape 4:3</option>
+          <option value="3:2">Landscape 3:2</option>
+          <option value="16:9">Wide 16:9</option>
+        </select></div>
+      <div><label for="cSize">Quality</label>
+        <select id="cSize"><option value="1K">Standard (1K)</option><option value="2K" selected>High (2K)</option><option value="4K">Print (4K)</option></select></div>
+    </div>
+    <button class="btn" id="cGo" style="margin-top:16px">Create image</button>
+    <div class="status" id="cStatus"></div>
+  </div>
+
+  <div class="card result" id="cResultCard" hidden>
+    <h2>Result</h2>
+    <img id="cResult" alt="Generated image">
+    <p class="hint" id="cResultText"></p>
+    <div class="row" style="margin-top:12px">
+      <button class="btn2" id="cSave">Download</button>
+      <button class="btn2" id="cShare">Share</button>
+      <button class="btn2" id="cAgain">Try again</button>
+    </div>
+    <label for="cFix">Not quite right? Say what to change</label>
+    <textarea id="cFix" style="min-height:70px" placeholder="e.g. softer shading, more like the references; keep the face closer to the original"></textarea>
+    <button class="btn" id="cFixGo" style="margin-top:10px">Refine this image</button>
+    <div class="status" id="cFixStatus"></div>
+  </div>
+</section>
+
+<!-- STYLES -->
+<section class="view" id="v-styles">
+  <div class="card">
+    <h2 id="sFormTitle">New style</h2>
+    <label for="sName">Style name</label>
+    <input type="text" id="sName" placeholder="e.g. Storybook watercolour">
+    <label>Sample artwork <span class="hint">(3–5 works best)</span></label>
+    <div class="drop" id="sDrop">Tap to add samples</div>
+    <input type="file" id="sFile" accept="image/*" multiple hidden>
+    <div class="thumbs" id="sThumbs"></div>
+    <label for="sDesc">Style description</label>
+    <textarea id="sDesc" placeholder="Tap 'Describe it for me' once you've added samples, or write your own: line work, colours, shading, texture, mood…"></textarea>
+    <p class="hint">This description is reused every time, which keeps results consistent. Edit it freely.</p>
+    <div class="row" style="margin-top:12px">
+      <button class="btn2" id="sAnalyse">Describe it for me</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn" id="sSave">Save style</button>
+    </div>
+    <div class="row" style="margin-top:8px" id="sCancelRow" hidden><button class="btn2" id="sCancel">Cancel editing</button></div>
+    <div class="status" id="sStatus"></div>
+  </div>
+  <div class="card">
+    <h2>Your styles</h2>
+    <div id="sList"></div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section class="view" id="v-gallery">
+  <div class="card">
+    <h2>Gallery</h2>
+    <p class="hint">Everything you've made, saved on this device.</p>
+  </div>
+  <div class="gallery" id="gList"></div>
+</section>
+
+<!-- SETTINGS -->
+<section class="view" id="v-settings">
+  <div class="card">
+    <h2>Gemini API key</h2>
+    <input type="password" id="kKey" placeholder="Paste your key" autocomplete="off">
+    <p class="hint">Create one at aistudio.google.com → Get API key. It's stored only in this browser and sent only to Google. Image generation may need billing switched on in AI Studio (roughly 3p per standard image).</p>
+    <div class="row" style="margin-top:12px">
+      <button class="btn" id="kSave">Save key</button>
+      <button class="btn2" id="kTest">Test key</button>
+    </div>
+    <div class="status" id="kStatus"></div>
+  </div>
+  <div class="card">
+    <h2>Models</h2>
+    <label for="mImage">Image model</label>
+    <select id="mImage">
+      <option value="gemini-nano-banana-2.1">Nano Banana 2.1 — fast, cheap (recommended)</option>
+      <option value="gemini-3-pro-image">Nano Banana Pro — best quality, pricier</option>
+      <option value="custom">Other…</option>
+    </select>
+    <input type="text" id="mImageCustom" placeholder="model id" style="margin-top:8px" hidden>
+    <label for="mText">Style-description model</label>
+    <input type="text" id="mText">
+    <p class="hint">Google renames models now and then. If something stops working with a "model not found" error, update the name here.</p>
+    <button class="btn" id="mSave" style="margin-top:12px">Save models</button>
+    <div class="status" id="mStatus"></div>
+  </div>
+  <div class="card">
+    <h2>Backup</h2>
+    <p class="hint">Styles live on this device. Export them to move to another phone or keep safe.</p>
+    <div class="row" style="margin-top:10px">
+      <button class="btn2" id="bExport">Export styles</button>
+      <button class="btn2" id="bImport">Import styles</button>
+    </div>
+    <input type="file" id="bFile" accept="application/json,.json" hidden>
+    <div class="status" id="bStatus"></div>
+  </div>
+</section>
+</main>
+
+<nav>
+  <button data-v="create" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2.5 5.5L20 11l-5.5 2.5L12 19l-2.5-5.5L4 11l5.5-2.5z"/></svg>Create</button>
+  <button data-v="styles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2a10 10 0 000 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4A5.6 5.6 0 0022 9.9C22 5.5 17.5 2 12 2z"/></svg>Styles</button>
+  <button data-v="gallery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Gallery</button>
+  <button data-v="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>Settings</button>
+</nav>
+
+<script>
+/* ---------- tiny helpers ---------- */
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem('ss_'+k); return v === null ? d : v; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem('ss_'+k, v); }catch(e){} }
+};
+const DEFAULT_TEXT_MODEL = 'gemini-3.8-flash';
+function setStatus(el, msg, kind){ el.className = 'status' + (kind ? ' '+kind : ''); el.innerHTML = msg; }
+function busy(msg){ return '<span class="spinner"></span>' + msg; }
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+/* ---------- IndexedDB ---------- */
+let dbp;
+function db(){
+  if(!dbp) dbp = new Promise((res, rej) => {
+    const r = indexedDB.open('style-studio', 1);
+    r.onupgradeneeded = () => {
+      r.result.createObjectStore('styles', {keyPath:'id'});
+      r.result.createObjectStore('gallery', {keyPath:'id'});
+    };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+  return dbp;
+}
+async function dbAll(s){ const d = await db(); return new Promise((res,rej)=>{ const q = d.transaction(s).objectStore(s).getAll(); q.onsuccess=()=>res(q.result||[]); q.onerror=()=>rej(q.error); }); }
+async function dbPut(s, v){ const d = await db(); return new Promise((res,rej)=>{ const t = d.transaction(s,'readwrite'); t.objectStore(s).put(v); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); }); }
+async function dbDel(s, id){ const d = await db(); return new Promise((res,rej)=>{ const t = d.transaction(s,'readwrite'); t.objectStore(s).delete(id); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); }); }
+
+/* ---------- images ---------- */
+function fileToDataURL(file, max = 1280){
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        let {width:w, height:h} = img;
+        const scale = Math.min(1, max / Math.max(w, h));
+        w = Math.round(w*scale); h = Math.round(h*scale);
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0,0,w,h); ctx.drawImage(img, 0, 0, w, h);
+        res({url: c.toDataURL('image/jpeg', 0.9), w, h});
+      };
+      img.onerror = () => rej(new Error('Could not read that image'));
+      img.src = fr.result;
+    };
+    fr.onerror = () => rej(fr.error);
+    fr.readAsDataURL(file);
+  });
+}
+function toPart(dataURL){
+  const [head, data] = dataURL.split(',');
+  return {inline_data: {mime_type: head.slice(5, head.indexOf(';')), data}};
+}
+function nearestRatio(w, h){
+  const opts = ['1:1','2:3','3:2','3:4','4:3','4:5','5:4','9:16','16:9','21:9'];
+  const r = w / h; let best = '1:1', diff = 9;
+  for(const o of opts){ const [a,b] = o.split(':').map(Number); const d = Math.abs(Math.log(r/(a/b))); if(d < diff){ diff = d; best = o; } }
+  return best;
+}
+
+/* ---------- Gemini ---------- */
+function apiKey(){ return store.get('key',''); }
+function imageModel(){ const m = store.get('imgModel','gemini-nano-banana-2.1'); return m === 'custom' ? store.get('imgModelCustom','') : m; }
+function textModel(){ return store.get('txtModel', DEFAULT_TEXT_MODEL) || DEFAULT_TEXT_MODEL; }
+
+async function gemini(model, parts, generationConfig){
+  if(!apiKey()) throw new Error('Add your Gemini API key in Settings first.');
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json', 'x-goog-api-key': apiKey()},
+    body: JSON.stringify({contents:[{role:'user', parts}], generationConfig})
+  });
+  let data = {};
+  try{ data = await res.json(); }catch(e){}
+  if(!res.ok){
+    const m = (data.error && data.error.message) || ('Request failed (' + res.status + ')');
+    if(res.status === 404) throw new Error(m + ' — the model name may have changed; check Settings → Models.');
+    if(res.status === 429) throw new Error(m + ' — you may have hit a limit, or image generation needs billing switched on in AI Studio.');
+    throw new Error(m);
+  }
+  return data;
+}
+function readResponse(data){
+  const cand = (data.candidates || [])[0];
+  if(!cand){
+    const why = data.promptFeedback && data.promptFeedback.blockReason;
+    throw new Error(why ? 'Google blocked this request (' + why + ').' : 'No result came back. Try again.');
+  }
+  const parts = (cand.content && cand.content.parts) || [];
+  let image = null, text = [];
+  for(const p of parts){
+    if(p.thought) continue;
+    const inl = p.inlineData || p.inline_data;
+    if(inl && inl.data) image = 'data:' + (inl.mimeType || inl.mime_type || 'image/png') + ';base64,' + inl.data;
+    else if(p.text) text.push(p.text);
+  }
+  return {image, text: text.join('\n').trim(), finish: cand.finishReason};
+}
+
+/* ---------- navigation ---------- */
+function go(v){
+  document.querySelectorAll('section.view').forEach(s => s.classList.toggle('active', s.id === 'v-'+v));
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
+  if(v === 'gallery') renderGallery();
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => go(b.dataset.v));
+
+/* ---------- STYLES ---------- */
+let draft = {id:null, samples:[]};
+$('sDrop').onclick = () => $('sFile').click();
+$('sFile').onchange = async e => {
+  const files = [...e.target.files]; e.target.value = '';
+  for(const f of files){
+    if(draft.samples.length >= 6){ setStatus($('sStatus'), 'Six samples is the most that helps — extra ones skipped.', ''); break; }
+    try{ draft.samples.push((await fileToDataURL(f, 1024)).url); }catch(err){ setStatus($('sStatus'), err.message, 'err'); }
+  }
+  renderDraftThumbs();
+};
+function renderDraftThumbs(){
+  const box = $('sThumbs'); box.innerHTML = '';
+  draft.samples.forEach((u, i) => {
+    const d = document.createElement('div'); d.className = 'thumb';
+    const img = document.createElement('img'); img.src = u; d.appendChild(img);
+    const x = document.createElement('button'); x.className = 'x'; x.textContent = '×'; x.title = 'Remove';
+    x.onclick = () => { draft.samples.splice(i,1); renderDraftThumbs(); };
+    d.appendChild(x); box.appendChild(d);
+  });
+}
+$('sAnalyse').onclick = async () => {
+  if(!draft.samples.length) return setStatus($('sStatus'), 'Add some sample artwork first.', 'err');
+  const btn = $('sAnalyse'); btn.disabled = true;
+  setStatus($('sStatus'), busy('Studying the samples…'));
+  try{
+    const parts = [{text: `These ${draft.samples.length} images are samples of one artistic style. Write a detailed, reusable description of the STYLE only — never the subject matter — so another artist could reproduce it on any subject. Cover: medium and technique, line work (weight, colour, confidence), colour palette (name specific colours), shading and lighting, texture and surface, level of detail and simplification, how figures/faces/proportions are drawn, backgrounds, composition habits, and overall mood. Write it as one tight paragraph of 120–200 words, in plain English, no headings, no preamble.`}];
+    draft.samples.forEach(u => parts.push(toPart(u)));
+    const r = readResponse(await gemini(textModel(), parts, {}));
+    if(!r.text) throw new Error('No description came back. Try again.');
+    $('sDesc').value = r.text;
+    setStatus($('sStatus'), 'Done — read it through and tweak anything that sounds off.', 'ok');
+  }catch(err){ setStatus($('sStatus'), err.message, 'err'); }
+  btn.disabled = false;
+};
+$('sSave').onclick = async () => {
+  const name = $('sName').value.trim();
+  if(!name) return setStatus($('sStatus'), 'Give the style a name.', 'err');
+  if(!draft.samples.length && !$('sDesc').value.trim()) return setStatus($('sStatus'), 'Add samples or a description.', 'err');
+  const style = {id: draft.id || uid(), name, description: $('sDesc').value.trim(), samples: draft.samples, created: Date.now()};
+  try{
+    await dbPut('styles', style);
+    store.set('lastStyle', style.id);
+    resetStyleForm();
+    setStatus($('sStatus'), 'Saved "' + name.replace(/</g,'&lt;') + '". Head to Create to use it.', 'ok');
+    await refreshStyles();
+  }catch(err){ setStatus($('sStatus'), 'Could not save: ' + err.message, 'err'); }
+};
+function resetStyleForm(){
+  draft = {id:null, samples:[]}; $('sName').value = ''; $('sDesc').value = '';
+  $('sFormTitle').textContent = 'New style'; $('sCancelRow').hidden = true; renderDraftThumbs();
+}
+$('sCancel').onclick = () => { resetStyleForm(); setStatus($('sStatus'), ''); };
+
+let styles = [];
+async function refreshStyles(){
+  styles = (await dbAll('styles')).sort((a,b) => b.created - a.created);
+  const list = $('sList'); list.innerHTML = '';
+  if(!styles.length) list.innerHTML = '<div class="empty">No styles yet — add one above.</div>';
+  styles.forEach(s => {
+    const row = document.createElement('div'); row.className = 'style-item';
+    const pics = document.createElement('div'); pics.className = 'pics';
+    s.samples.slice(0,3).forEach(u => { const i = document.createElement('img'); i.src = u; pics.appendChild(i); });
+    const meta = document.createElement('div'); meta.className = 'meta';
+    const b = document.createElement('b'); b.textContent = s.name;
+    const sp = document.createElement('span'); sp.textContent = s.samples.length + ' sample' + (s.samples.length === 1 ? '' : 's') + (s.description ? ' · described' : ' · no description');
+    meta.append(b, sp);
+    const edit = document.createElement('button'); edit.className = 'btn2 btn-sm'; edit.textContent = 'Edit';
+    edit.onclick = () => {
+      draft = {id: s.id, samples: [...s.samples]}; $('sName').value = s.name; $('sDesc').value = s.description || '';
+      $('sFormTitle').textContent = 'Edit style'; $('sCancelRow').hidden = false; renderDraftThumbs(); setStatus($('sStatus'), ''); window.scrollTo(0,0);
+    };
+    const del = document.createElement('button'); del.className = 'btn2 btn-sm'; del.textContent = 'Delete';
+    del.onclick = async () => { if(confirm('Delete "' + s.name + '"?')){ await dbDel('styles', s.id); refreshStyles(); } };
+    row.append(pics, meta, edit, del); list.appendChild(row);
+  });
+  // create-tab picker
+  const sel = $('cStyle'); const keep = sel.value || store.get('lastStyle','');
+  sel.innerHTML = '';
+  if(!styles.length){ sel.innerHTML = '<option value="">No styles yet — add one in Styles</option>'; }
+  styles.forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = s.name; sel.appendChild(o); });
+  if(styles.some(s => s.id === keep)) sel.value = keep;
+  updateStyleHint();
+}
+function currentStyle(){ return styles.find(s => s.id === $('cStyle').value); }
+function updateStyleHint(){
+  const s = currentStyle();
+  $('cStyleHint').textContent = s ? (s.samples.length + ' sample' + (s.samples.length===1?'':'s') + ' will be sent as reference.') : '';
+}
+$('cStyle').onchange = () => { store.set('lastStyle', $('cStyle').value); updateStyleHint(); };
+
+/* ---------- CREATE ---------- */
+let content = null;      // {url,w,h}
+let last = null;         // {image, opts}
+$('cDrop').onclick = () => $('cFile').click();
+$('cFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if(!f) return;
+  try{
+    content = await fileToDataURL(f, 1536);
+    $('cDrop').innerHTML = ''; const img = document.createElement('img'); img.src = content.url; $('cDrop').appendChild(img);
+    $('cClearRow').hidden = false;
+  }catch(err){ setStatus($('cStatus'), err.message, 'err'); }
+};
+$('cClear').onclick = () => {
+  content = null; $('cClearRow').hidden = true;
+  $('cDrop').innerHTML = 'Tap to choose a photo<br><span class="hint">or leave empty and just describe a scene below</span>';
+};
+
+function buildParts(style, opts, current, fix){
+  const parts = [];
+  const n = style.samples.length;
+  parts.push({text: `You are an expert illustrator who can reproduce any artistic style exactly.\n\n` +
+    (n ? `The next ${n} image${n>1?'s are':' is'} STYLE REFERENCES only. Use them for style alone — do not copy their subjects, characters, objects or layout.` : '') +
+    (style.description ? `\n\nSTYLE DESCRIPTION:\n${style.description}` : '')});
+  style.samples.forEach((u, i) => { parts.push({text: `Style reference ${i+1}:`}); parts.push(toPart(u)); });
+  if(opts.content){ parts.push({text: 'CONTENT IMAGE (the picture to recreate):'}); parts.push(toPart(opts.content)); }
+  if(current){ parts.push({text: 'CURRENT RESULT (your previous attempt, to be improved):'}); parts.push(toPart(current)); }
+
+  let task;
+  if(current){
+    task = `Improve the CURRENT RESULT. Change this: ${fix}\nKeep everything else the same, and stay faithful to the style references and description.` +
+      (opts.content ? ' Keep the subject recognisable from the CONTENT IMAGE.' : '');
+  } else if(opts.content){
+    task = `Recreate the CONTENT IMAGE fully in the reference style. Keep its subject, layout, poses, expressions and key details recognisable, but take everything visual — colours, line work, shading, texture, lighting — from the style references and description. The result should look as if the same artist made it.`;
+  } else {
+    task = `Create a new image in the reference style showing the scene described below. It should look as if the same artist made it.`;
+  }
+  if(opts.notes && !current) task += `\n\nAdditional instructions: ${opts.notes}`;
+  if(!opts.content && !current && !opts.notes) task += `\n\n(No scene was described — pick a pleasant subject that suits the style.)`;
+  task += `\n\nReturn one finished image with no text, captions, borders or signatures unless asked for.`;
+  parts.push({text: task});
+  return parts;
+}
+
+async function runGenerate(opts, current, fix, statusEl, btn){
+  const style = currentStyle();
+  if(!style) return setStatus(statusEl, 'Pick or create a style first.', 'err');
+  btn.disabled = true;
+  setStatus(statusEl, busy(current ? 'Refining…' : 'Painting… this can take 20–60 seconds'));
+  try{
+    const generationConfig = {responseModalities: ['TEXT','IMAGE'], imageConfig: {aspectRatio: opts.ratio, imageSize: opts.size}};
+    const r = readResponse(await gemini(imageModel(), buildParts(style, opts, current, fix), generationConfig));
+    if(!r.image) throw new Error(r.text ? ('No image came back. Gemini said: ' + r.text) : ('No image came back' + (r.finish ? ' (' + r.finish + ')' : '') + '. Try again or reword it.'));
+    last = {image: r.image, opts, styleName: style.name};
+    $('cResult').src = r.image; $('cResultText').textContent = r.text || '';
+    $('cResultCard').hidden = false; $('cFix').value = '';
+    setStatus(statusEl, 'Done.', 'ok');
+    await dbPut('gallery', {id: uid(), image: r.image, styleName: style.name, notes: current ? fix : opts.notes, created: Date.now()});
+    $('cResultCard').scrollIntoView({behavior:'smooth', block:'start'});
+  }catch(err){ setStatus(statusEl, err.message, 'err'); }
+  btn.disabled = false;
+}
+$('cGo').onclick = () => {
+  let ratio = $('cRatio').value;
+  if(ratio === 'auto') ratio = content ? nearestRatio(content.w, content.h) : '1:1';
+  const opts = {content: content && content.url, notes: $('cNotes').value.trim(), ratio, size: $('cSize').value};
+  if(!opts.content && !opts.notes) return setStatus($('cStatus'), 'Add a photo, or describe what you want in the instructions box.', 'err');
+  runGenerate(opts, null, null, $('cStatus'), $('cGo'));
+};
+$('cAgain').onclick = () => { if(last) runGenerate(last.opts, null, null, $('cFixStatus'), $('cAgain')); };
+$('cFixGo').onclick = () => {
+  const fix = $('cFix').value.trim();
+  if(!last) return;
+  if(!fix) return setStatus($('cFixStatus'), 'Say what you want changed.', 'err');
+  runGenerate(last.opts, last.image, fix, $('cFixStatus'), $('cFixGo'));
+};
+
+function dataURLtoBlob(u){
+  const [h, d] = u.split(','); const mime = h.slice(5, h.indexOf(';'));
+  const bin = atob(d); const arr = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], {type: mime});
+}
+function download(u, name){
+  const url = URL.createObjectURL(dataURLtoBlob(u));
+  const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+async function share(u, name){
+  try{
+    const blob = dataURLtoBlob(u); const file = new File([blob], name, {type: blob.type});
+    if(navigator.canShare && navigator.canShare({files:[file]})) await navigator.share({files:[file], title: 'Style Studio'});
+    else download(u, name);
+  }catch(e){ if(e.name !== 'AbortError') download(u, name); }
+}
+const fname = s => 'style-studio-' + (s||'image').toLowerCase().replace(/[^a-z0-9]+/g,'-') + '-' + Date.now() + '.png';
+$('cSave').onclick = () => last && download(last.image, fname(last.styleName));
+$('cShare').onclick = () => last && share(last.image, fname(last.styleName));
+
+/* ---------- GALLERY ---------- */
+async function renderGallery(){
+  const items = (await dbAll('gallery')).sort((a,b) => b.created - a.created);
+  const box = $('gList'); box.innerHTML = '';
+  if(!items.length){ box.innerHTML = '<div class="empty" style="grid-column:1/-1">Nothing yet — make something in Create.</div>'; return; }
+  items.forEach(it => {
+    const f = document.createElement('figure');
+    const img = document.createElement('img'); img.src = it.image; img.loading = 'lazy'; img.onclick = () => share(it.image, fname(it.styleName));
+    const cap = document.createElement('figcaption');
+    const t = document.createElement('span'); t.textContent = it.styleName;
+    const btns = document.createElement('span');
+    const dl = document.createElement('button'); dl.className = 'btn2'; dl.textContent = 'Save'; dl.onclick = () => download(it.image, fname(it.styleName));
+    const del = document.createElement('button'); del.className = 'btn2'; del.textContent = '✕'; del.title = 'Delete';
+    del.onclick = async () => { if(confirm('Delete this image?')){ await dbDel('gallery', it.id); renderGallery(); } };
+    btns.append(dl, ' ', del); cap.append(t, btns); f.append(img, cap); box.appendChild(f);
+  });
+}
+
+/* ---------- SETTINGS ---------- */
+function loadSettings(){
+  $('kKey').value = apiKey();
+  $('mImage').value = store.get('imgModel','gemini-nano-banana-2.1');
+  $('mImageCustom').value = store.get('imgModelCustom','');
+  $('mImageCustom').hidden = $('mImage').value !== 'custom';
+  $('mText').value = textModel();
+  $('noKeyCard').hidden = !!apiKey();
+}
+$('mImage').onchange = () => { $('mImageCustom').hidden = $('mImage').value !== 'custom'; };
+$('kSave').onclick = () => { store.set('key', $('kKey').value.trim()); loadSettings(); setStatus($('kStatus'), apiKey() ? 'Saved on this device.' : 'Key cleared.', 'ok'); };
+$('kTest').onclick = async () => {
+  const k = $('kKey').value.trim(); if(!k) return setStatus($('kStatus'), 'Paste a key first.', 'err');
+  setStatus($('kStatus'), busy('Checking…'));
+  try{
+    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', {headers:{'x-goog-api-key': k}});
+    const d = await r.json();
+    if(!r.ok) throw new Error((d.error && d.error.message) || r.status);
+    const names = (d.models||[]).map(m => m.name.replace('models/',''));
+    const img = imageModel();
+    setStatus($('kStatus'), 'Key works. ' + (names.includes(img) ? 'Image model "' + img + '" is available.' : 'Heads up: "' + img + '" isn\'t in your model list — check Settings → Models.'), names.includes(img) ? 'ok' : '');
+  }catch(err){ setStatus($('kStatus'), 'That key didn\'t work: ' + err.message, 'err'); }
+};
+$('mSave').onclick = () => {
+  store.set('imgModel', $('mImage').value); store.set('imgModelCustom', $('mImageCustom').value.trim());
+  store.set('txtModel', $('mText').value.trim() || DEFAULT_TEXT_MODEL);
+  loadSettings(); setStatus($('mStatus'), 'Saved.', 'ok');
+};
+$('bExport').onclick = async () => {
+  const data = JSON.stringify({app:'style-studio', version:1, styles: await dbAll('styles')});
+  const url = URL.createObjectURL(new Blob([data], {type:'application/json'}));
+  const a = document.createElement('a'); a.href = url; a.download = 'style-studio-styles.json'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  setStatus($('bStatus'), 'Exported.', 'ok');
+};
+$('bImport').onclick = () => $('bFile').click();
+$('bFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if(!f) return;
+  try{
+    const d = JSON.parse(await f.text());
+    if(!d.styles || !Array.isArray(d.styles)) throw new Error('Not a Style Studio export');
+    for(const s of d.styles){ if(s && s.id && s.name) await dbPut('styles', {id:s.id, name:String(s.name), description:String(s.description||''), samples:(s.samples||[]).filter(u => typeof u === 'string' && u.startsWith('data:image/')), created:s.created||Date.now()}); }
+    await refreshStyles(); setStatus($('bStatus'), 'Imported ' + d.styles.length + ' style(s).', 'ok');
+  }catch(err){ setStatus($('bStatus'), 'Import failed: ' + err.message, 'err'); }
+};
+
+/* ---------- start ---------- */
+loadSettings();
+refreshStyles().catch(err => setStatus($('cStatus'), 'Storage unavailable here: ' + err.message, 'err'));
+</script>
+</body>
+</html>
