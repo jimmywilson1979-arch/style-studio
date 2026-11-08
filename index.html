@@ -311,7 +311,11 @@ async function gemini(model, parts, generationConfig){
   if(!res.ok){
     const m = (data.error && data.error.message) || ('Request failed (' + res.status + ')');
     if(res.status === 404) throw new Error(m + ' — the model name may have changed; check Settings → Models.');
-    if(res.status === 429) throw new Error(m + ' — you may have hit a limit, or image generation needs billing switched on in AI Studio.');
+    if(res.status === 429){
+      if(/free.?tier/i.test(m) && /limit: ?0/.test(m)) throw new Error('Your Gemini key is on the Free tier, which allows no images from this model. Go to aistudio.google.com/apikey, tap "Set up billing" next to your key, then try again.');
+      const wait = (m.match(/retry in ([\dhms.]+)/i) || [])[1];
+      throw new Error('Gemini says you\'ve hit a usage limit' + (wait ? ' (try again in ' + wait.replace(/\.\d+s$/, 's') + ')' : '') + '. If this keeps happening, check billing in AI Studio.');
+    }
     throw new Error(m);
   }
   return data;
